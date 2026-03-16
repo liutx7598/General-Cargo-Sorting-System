@@ -52,6 +52,7 @@ public final class AlgorithmModels {
         String dangerousClass,
         List<String> incompatibleTags,
         Double isolationLevel,
+        Integer segregationCode,
         Double weight,
         Double length,
         Double width,
@@ -210,4 +211,3 @@ public final class AlgorithmModels {
     ) {
     }
 }
-

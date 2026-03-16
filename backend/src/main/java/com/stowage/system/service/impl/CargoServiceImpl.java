@@ -38,6 +38,7 @@ public class CargoServiceImpl implements CargoService {
         cargo.setDangerousClass(request.dangerousClass());
         cargo.setIncompatibleTags(request.incompatibleTags());
         cargo.setIsolationLevel(request.isolationLevel());
+        cargo.setSegregationCode(request.segregationCode());
         cargo.setWeight(request.weight());
         cargo.setLength(request.length());
         cargo.setWidth(request.width());
@@ -57,4 +58,3 @@ public class CargoServiceImpl implements CargoService {
             .orElseThrow(() -> new NotFoundException("货物不存在: " + id)));
     }
 }
-

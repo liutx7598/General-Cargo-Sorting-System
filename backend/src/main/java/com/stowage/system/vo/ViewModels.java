@@ -53,6 +53,7 @@ public final class ViewModels {
         String dangerousClass,
         String incompatibleTags,
         Double isolationLevel,
+        Integer segregationCode,
         Double weight,
         Double length,
         Double width,
@@ -152,4 +153,3 @@ public final class ViewModels {
     ) {
     }
 }
-

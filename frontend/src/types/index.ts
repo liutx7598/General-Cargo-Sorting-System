@@ -47,6 +47,7 @@ export interface Cargo {
   dangerousClass?: string | null;
   incompatibleTags: string;
   isolationLevel: number;
+  segregationCode: number;
   weight: number;
   length: number;
   width: number;
@@ -157,4 +158,3 @@ export interface GeneratePlanCommand {
 export interface ValidatePlanCommand {
   config: SolverConfig;
 }
-

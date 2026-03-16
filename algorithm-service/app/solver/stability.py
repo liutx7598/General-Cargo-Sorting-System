@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from app.models.domain import HoldCentroidResult, HydrostaticPoint, PlacedCargo, ShipData
+from app.models.domain import HoldCentroidResult, HoldData, HydrostaticPoint, PlacedCargo, ShipData
 
 
 def calculate_hold_centroid(
@@ -38,6 +38,7 @@ def calculate_hold_centroid(
 def calculate_ship_centroid(
     ship: ShipData,
     items: Iterable[PlacedCargo],
+    holds_by_id: dict[int, HoldData] | None = None,
     fuel_weight: float = 0.0,
     ballast_weight: float = 0.0,
     fresh_water_weight: float = 0.0,
@@ -50,9 +51,20 @@ def calculate_ship_centroid(
     cargo_items = list(items)
     cargo_weight = sum(item.weight for item in cargo_items)
     displacement = ship.lightship_weight + cargo_weight + fuel_weight + ballast_weight + fresh_water_weight + stores_weight
-    longitudinal_moment = sum(item.weight * item.centroid_x for item in cargo_items)
-    transverse_moment = sum(item.weight * item.centroid_y for item in cargo_items)
-    vertical_moment = sum(item.weight * item.centroid_z for item in cargo_items)
+
+    def resolve_ship_coordinates(item: PlacedCargo) -> tuple[float, float, float]:
+        if not holds_by_id or item.hold_id not in holds_by_id:
+            return item.centroid_x, item.centroid_y, item.centroid_z
+        hold = holds_by_id[item.hold_id]
+        ship_x = hold.lcg - hold.length / 2.0 + item.centroid_x
+        ship_y = hold.tcg - hold.width / 2.0 + item.centroid_y
+        ship_z = hold.vcg - hold.height / 2.0 + item.centroid_z
+        return ship_x, ship_y, ship_z
+
+    ship_coordinates = {item.cargo_id: resolve_ship_coordinates(item) for item in cargo_items}
+    longitudinal_moment = sum(item.weight * ship_coordinates[item.cargo_id][0] for item in cargo_items)
+    transverse_moment = sum(item.weight * ship_coordinates[item.cargo_id][1] for item in cargo_items)
+    vertical_moment = sum(item.weight * ship_coordinates[item.cargo_id][2] for item in cargo_items)
 
     if displacement <= 0:
         return {
@@ -122,3 +134,19 @@ def calculate_longitudinal_index(items: Iterable[PlacedCargo], x_ref: float) -> 
     """Calculate the simplified longitudinal concentration index."""
     return sum(item.weight * abs(item.centroid_x - x_ref) for item in items)
 
+
+def calculate_longitudinal_index_in_ship_coordinates(
+    items: Iterable[PlacedCargo],
+    x_ref: float,
+    holds_by_id: dict[int, HoldData] | None = None,
+) -> float:
+    """Calculate the simplified longitudinal concentration index in ship coordinates."""
+    total = 0.0
+    for item in items:
+        if holds_by_id and item.hold_id in holds_by_id:
+            hold = holds_by_id[item.hold_id]
+            ship_x = hold.lcg - hold.length / 2.0 + item.centroid_x
+        else:
+            ship_x = item.centroid_x
+        total += item.weight * abs(ship_x - x_ref)
+    return total

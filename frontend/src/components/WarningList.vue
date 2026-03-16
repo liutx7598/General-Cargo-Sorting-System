@@ -1,27 +1,45 @@
 <template>
-  <el-table :data="warnings" stripe>
-    <el-table-column prop="warningType" label="类型" width="140" />
-    <el-table-column prop="warningMessage" label="信息" min-width="280" />
-    <el-table-column label="级别" width="120">
-      <template #default="{ row }">
-        <el-tag :type="row.severity === 'ERROR' ? 'danger' : 'warning'">{{ formatSeverity(row.severity) }}</el-tag>
-      </template>
-    </el-table-column>
-    <el-table-column prop="cargoId" label="货物ID" width="110" />
-    <el-table-column prop="holdId" label="货舱ID" width="110" />
-  </el-table>
+  <div v-if="warnings.length" class="warning-table-shell">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>类型</th>
+          <th>信息</th>
+          <th>级别</th>
+          <th>货物 ID</th>
+          <th>货舱 ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="warning in warnings"
+          :key="warning.id ?? `${warning.planId}-${warning.warningType}-${warning.warningMessage}`"
+        >
+          <td>{{ warning.warningType }}</td>
+          <td>{{ warning.warningMessage }}</td>
+          <td>
+            <v-chip size="small" :color="warning.severity === 'ERROR' ? 'error' : 'warning'" variant="tonal">
+              {{ formatSeverity(warning.severity) }}
+            </v-chip>
+          </td>
+          <td>{{ warning.cargoId ?? '-' }}</td>
+          <td>{{ warning.holdId ?? '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <v-alert v-else type="success" variant="tonal" text="当前没有告警记录。" />
 </template>
 
 <script setup lang="ts">
 import type { WarningRecord } from '@/types';
+import { formatSeverity } from '@/utils/formatters';
 
 defineProps<{ warnings: WarningRecord[] }>();
-
-function formatSeverity(severity: string) {
-  const severityMap: Record<string, string> = {
-    ERROR: '严重',
-    WARNING: '警告',
-  };
-  return severityMap[severity] ?? severity;
-}
 </script>
+
+<style scoped>
+.warning-table-shell {
+  overflow-x: auto;
+}
+</style>

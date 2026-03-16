@@ -1,18 +1,29 @@
 <template>
-  <div style="min-height: 100vh; display: grid; place-items: center; padding: 24px;">
-    <div class="page-card" style="width: min(460px, 100%);">
-      <div style="font-size: 30px; font-weight: 700; margin-bottom: 12px;">件杂货智能配载系统</div>
-      <div style="color: #64748b; margin-bottom: 20px;">MVP 登录页，便于快速进入主流程联调。</div>
-      <el-form :model="form" @submit.prevent="handleLogin">
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" />
-        </el-form-item>
-        <el-form-item label="密码">
-          <el-input v-model="form.password" type="password" show-password />
-        </el-form-item>
-        <el-button type="primary" style="width: 100%;" @click="handleLogin">进入系统</el-button>
-      </el-form>
-    </div>
+  <div class="login-shell">
+    <div class="login-backdrop"></div>
+    <v-card class="login-card" rounded="xl" elevation="8">
+      <v-card-text class="login-content">
+        <div class="login-kicker">MVP Access</div>
+        <h1 class="login-title">件杂货智能配载系统</h1>
+        <p class="login-subtitle">
+          当前登录页用于演示快速进入系统，不做复杂权限控制。
+        </p>
+
+        <div class="form-grid">
+          <v-text-field v-model="form.username" label="用户名" prepend-inner-icon="mdi-account-circle-outline" />
+          <v-text-field
+            v-model="form.password"
+            label="密码"
+            type="password"
+            prepend-inner-icon="mdi-lock-outline"
+          />
+        </div>
+
+        <v-btn color="primary" size="large" block class="mt-4" @click="handleLogin">
+          进入系统
+        </v-btn>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
@@ -34,3 +45,56 @@ function handleLogin() {
   router.push('/ships');
 }
 </script>
+
+<style scoped>
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(15, 92, 115, 0.18), transparent 28%),
+    radial-gradient(circle at 85% 15%, rgba(197, 123, 20, 0.18), transparent 22%),
+    linear-gradient(145deg, #eef4f8 0%, #dfe8f1 100%);
+}
+
+.login-card {
+  width: min(520px, 100%);
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+}
+
+.login-content {
+  padding: 28px;
+}
+
+.login-kicker {
+  color: #0f5c73;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-title {
+  margin: 10px 0 8px;
+  font-size: 34px;
+  line-height: 1.1;
+  color: #17324d;
+}
+
+.login-subtitle {
+  margin: 0 0 22px;
+  color: #617182;
+  line-height: 1.6;
+}
+</style>

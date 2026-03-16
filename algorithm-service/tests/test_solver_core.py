@@ -3,8 +3,15 @@ from app.solver.evaluator import evaluate_compliance
 from app.solver.geometry import calculate_cargo_centroid, calculate_distance_between_boxes, check_bounds, check_overlap, rotate_dimensions
 from app.solver.hold_allocator import allocate_holds
 from app.solver.packer import pack_hold_items
-from app.solver.rule_checker import get_required_isolation_distance
-from app.solver.stability import calculate_gm, calculate_hold_centroid, calculate_hold_utilization, calculate_longitudinal_index, calculate_ship_centroid, interpolate_km
+from app.solver.rule_checker import check_rule_violations, get_required_isolation_distance
+from app.solver.stability import (
+    calculate_gm,
+    calculate_hold_centroid,
+    calculate_hold_utilization,
+    calculate_longitudinal_index,
+    calculate_ship_centroid,
+    interpolate_km,
+)
 
 
 def sample_ship() -> ShipData:
@@ -71,6 +78,35 @@ def test_calculate_ship_centroid_and_kg() -> None:
     result = calculate_ship_centroid(ship, [item])
     assert result["displacement"] == 1710.0
     assert result["kg"] < ship.lightship_kg
+
+
+def test_calculate_ship_centroid_uses_hold_ship_coordinates() -> None:
+    ship = sample_ship()
+    hold = HoldData(1, 1, "H1", 17.0, 12.0, 8.0, 1632.0, 19.0, 0.0, 5.0, 420.0, 7.5, 1)
+    item = PlacedCargo(
+        11,
+        "CG-001",
+        "Steel Coil",
+        1,
+        "H1",
+        1,
+        "LWH",
+        0.0,
+        0.0,
+        0.0,
+        6.0,
+        2.4,
+        2.2,
+        3.0,
+        1.2,
+        1.1,
+        30.0,
+        "STEEL",
+        None,
+    )
+    result = calculate_ship_centroid(ship, [item], holds_by_id={1: hold})
+    expected_lcg = (ship.lightship_weight * ship.lightship_lcg + 30.0 * 13.5) / 1710.0
+    assert round(result["lcg"], 6) == round(expected_lcg, 6)
 
 
 def test_interpolate_km() -> None:
@@ -174,3 +210,39 @@ def test_pack_hold_items_prefers_same_layer_rows_over_upright_rotation() -> None
     assert {item.layer_no for item in placements} == {1}
     assert any(item.origin_y > 0 for item in placements)
     assert max(item.placed_height for item in placements) <= 2.4
+
+
+def test_allocate_holds_respects_patent_segregation_level_two() -> None:
+    ship = sample_ship()
+    holds = [
+        HoldData(1, 1, "H1", 17.0, 12.0, 8.0, 1632.0, 19.0, 0.0, 5.0, 420.0, 7.5, 1),
+        HoldData(2, 1, "H2", 18.0, 12.0, 8.0, 1728.0, 40.0, 0.0, 5.0, 450.0, 7.5, 2),
+    ]
+    cargos = [
+        CargoData(11, "DG-001", "Danger A", "DANGEROUS", "3", [], 0.0, 12.0, 3.0, 2.5, 2.4, False, True, segregation_code=2),
+        CargoData(12, "DG-002", "Danger B", "DANGEROUS", "8", [], 0.0, 11.0, 3.0, 2.5, 2.4, False, True, segregation_code=2),
+    ]
+
+    assignment, status, _ = allocate_holds(ship, cargos, holds, 2, default_isolation_distance=1.0)
+
+    assert status in {"OPTIMAL", "FEASIBLE"}
+    assert len(set(assignment.values())) == 2
+
+
+def test_rule_checker_reports_cross_hold_patent_segregation_violation() -> None:
+    holds = {
+        1: HoldData(1, 1, "H1", 17.0, 12.0, 8.0, 1632.0, 19.0, 0.0, 5.0, 420.0, 7.5, 1),
+        2: HoldData(2, 1, "H2", 18.0, 12.0, 8.0, 1728.0, 40.0, 0.0, 5.0, 450.0, 7.5, 2),
+    }
+    cargos = {
+        11: CargoData(11, "DG-001", "Danger A", "DANGEROUS", "3", [], 0.0, 12.0, 3.0, 2.5, 2.4, False, True, segregation_code=4),
+        12: CargoData(12, "DG-002", "Danger B", "DANGEROUS", "8", [], 0.0, 11.0, 3.0, 2.5, 2.4, False, True, segregation_code=4),
+    }
+    items = [
+        PlacedCargo(11, "DG-001", "Danger A", 1, "H1", 1, "LWH", 0.0, 0.0, 0.0, 3.0, 2.5, 2.4, 1.5, 1.25, 1.2, 12.0, "DANGEROUS", "3"),
+        PlacedCargo(12, "DG-002", "Danger B", 2, "H2", 1, "LWH", 0.0, 0.0, 0.0, 3.0, 2.5, 2.4, 1.5, 1.25, 1.2, 11.0, "DANGEROUS", "8"),
+    ]
+
+    warnings = check_rule_violations(holds, cargos, items, 1.0)
+
+    assert any(warning.warning_type == "ISOLATION" for warning in warnings)

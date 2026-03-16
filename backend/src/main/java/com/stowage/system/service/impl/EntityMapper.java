@@ -33,7 +33,7 @@ final class EntityMapper {
     static ViewModels.CargoVO toCargoVO(Cargo cargo) {
         return new ViewModels.CargoVO(
             cargo.getId(), cargo.getCargoCode(), cargo.getCargoName(), cargo.getCargoCategory(),
-            cargo.getDangerousClass(), cargo.getIncompatibleTags(), cargo.getIsolationLevel(), cargo.getWeight(),
+            cargo.getDangerousClass(), cargo.getIncompatibleTags(), cargo.getIsolationLevel(), cargo.getSegregationCode(), cargo.getWeight(),
             cargo.getLength(), cargo.getWidth(), cargo.getHeight(), cargo.getStackable(), cargo.getRotatable(),
             cargo.getCenterOffsetX(), cargo.getCenterOffsetY(), cargo.getCenterOffsetZ(), cargo.getRemark()
         );
@@ -90,7 +90,7 @@ final class EntityMapper {
     static AlgorithmModels.CargoPayload toCargoPayload(Cargo cargo) {
         return new AlgorithmModels.CargoPayload(
             cargo.getId(), cargo.getCargoCode(), cargo.getCargoName(), cargo.getCargoCategory(), cargo.getDangerousClass(),
-            splitCsv(cargo.getIncompatibleTags()), cargo.getIsolationLevel(), cargo.getWeight(), cargo.getLength(),
+            splitCsv(cargo.getIncompatibleTags()), cargo.getIsolationLevel(), cargo.getSegregationCode(), cargo.getWeight(), cargo.getLength(),
             cargo.getWidth(), cargo.getHeight(), cargo.getStackable(), cargo.getRotatable(), cargo.getCenterOffsetX(),
             cargo.getCenterOffsetY(), cargo.getCenterOffsetZ(), cargo.getRemark()
         );
@@ -139,4 +139,3 @@ final class EntityMapper {
         return value == null ? fallback : value;
     }
 }
-

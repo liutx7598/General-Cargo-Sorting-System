@@ -1,79 +1,149 @@
 <template>
-  <div class="page-grid">
-    <div class="page-card">
-      <div class="section-title">船舶管理</div>
-      <el-form :model="shipForm" inline>
-        <el-form-item label="船舶代码"><el-input v-model="shipForm.shipCode" /></el-form-item>
-        <el-form-item label="船名"><el-input v-model="shipForm.shipName" /></el-form-item>
-        <el-form-item label="船型">
-          <el-select v-model="shipForm.shipType" style="width: 180px;">
-            <el-option label="件杂货船" value="GENERAL_CARGO" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="总长"><el-input-number v-model="shipForm.lengthOverall" :min="1" /></el-form-item>
-        <el-form-item label="垂线间长"><el-input-number v-model="shipForm.lengthBetweenPerpendiculars" :min="1" /></el-form-item>
-        <el-form-item label="型宽"><el-input-number v-model="shipForm.beam" :min="1" /></el-form-item>
-        <el-form-item label="型深"><el-input-number v-model="shipForm.depth" :min="1" /></el-form-item>
-        <el-form-item label="空船重"><el-input-number v-model="shipForm.lightshipWeight" :min="1" /></el-form-item>
-        <el-form-item label="KG"><el-input-number v-model="shipForm.lightshipKG" :min="0" /></el-form-item>
-        <el-form-item label="LCG"><el-input-number v-model="shipForm.lightshipLCG" :min="0" /></el-form-item>
-        <el-form-item label="设计排水量"><el-input-number v-model="shipForm.designDisplacement" :min="1" /></el-form-item>
-        <el-form-item label="设计GM"><el-input-number v-model="shipForm.designGM" :min="0" /></el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="saveShip">保存船舶</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
+  <div class="page-shell">
+    <v-card class="page-card">
+      <v-card-text>
+        <div class="toolbar-row">
+          <div>
+            <div class="section-title">船舶管理</div>
+            <div class="muted-text">维护船舶基础参数，并为后续货舱管理提供主船上下文。</div>
+          </div>
+          <v-chip color="primary" variant="tonal">当前船型：{{ formatShipType(shipForm.shipType) }}</v-chip>
+        </div>
 
-    <div class="page-card">
-      <div class="section-title">船舶列表</div>
-      <el-table :data="store.ships" stripe @row-click="selectShip">
-        <el-table-column prop="shipCode" label="代码" width="140" />
-        <el-table-column prop="shipName" label="船名" />
-        <el-table-column label="船型" width="180">
-          <template #default="{ row }">{{ formatShipType(row.shipType) }}</template>
-        </el-table-column>
-        <el-table-column prop="designGM" label="设计GM" width="120" />
-      </el-table>
-    </div>
+        <div class="form-grid mt-4">
+          <v-text-field v-model="shipForm.shipCode" label="船舶代码" />
+          <v-text-field v-model="shipForm.shipName" label="船名" />
+          <v-select v-model="shipForm.shipType" :items="shipTypes" item-title="title" item-value="value" label="船型" />
+          <app-number-field v-model="shipForm.lengthOverall" label="总长" :min="1" />
+          <app-number-field v-model="shipForm.lengthBetweenPerpendiculars" label="垂线间长" :min="1" />
+          <app-number-field v-model="shipForm.beam" label="型宽" :min="1" />
+          <app-number-field v-model="shipForm.depth" label="型深" :min="1" />
+          <app-number-field v-model="shipForm.lightshipWeight" label="空船重" :min="1" />
+          <app-number-field v-model="shipForm.lightshipKG" label="KG" :min="0" />
+          <app-number-field v-model="shipForm.lightshipLCG" label="LCG" :min="0" />
+          <app-number-field v-model="shipForm.designDisplacement" label="设计排水量" :min="1" />
+          <app-number-field v-model="shipForm.designGM" label="设计 GM" :min="0" />
+        </div>
 
-    <div v-if="selectedShip" class="page-card">
-      <div class="section-title">货舱管理 - {{ selectedShip.shipName }}</div>
-      <el-form :model="holdForm" inline>
-        <el-form-item label="舱号"><el-input v-model="holdForm.holdNo" /></el-form-item>
-        <el-form-item label="长度"><el-input-number v-model="holdForm.length" :min="1" /></el-form-item>
-        <el-form-item label="宽度"><el-input-number v-model="holdForm.width" :min="1" /></el-form-item>
-        <el-form-item label="高度"><el-input-number v-model="holdForm.height" :min="1" /></el-form-item>
-        <el-form-item label="容积"><el-input-number v-model="holdForm.volume" :min="1" /></el-form-item>
-        <el-form-item label="LCG"><el-input-number v-model="holdForm.lcg" /></el-form-item>
-        <el-form-item label="TCG"><el-input-number v-model="holdForm.tcg" /></el-form-item>
-        <el-form-item label="VCG"><el-input-number v-model="holdForm.vcg" :min="0" /></el-form-item>
-        <el-form-item label="最大载重"><el-input-number v-model="holdForm.maxLoadWeight" :min="1" /></el-form-item>
-        <el-form-item label="甲板限值"><el-input-number v-model="holdForm.deckStrengthLimit" :min="1" /></el-form-item>
-        <el-form-item label="顺序号"><el-input-number v-model="holdForm.sequenceNo" :min="1" /></el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="saveHold">保存货舱</el-button>
-        </el-form-item>
-      </el-form>
-      <el-table :data="holds" stripe>
-        <el-table-column prop="holdNo" label="舱号" width="100" />
-        <el-table-column prop="volume" label="容积" width="120" />
-        <el-table-column prop="maxLoadWeight" label="最大载重" width="140" />
-        <el-table-column prop="lcg" label="LCG" width="120" />
-      </el-table>
-    </div>
+        <v-textarea v-model="shipForm.remark" label="备注" rows="2" class="mt-4" />
+
+        <div class="mt-4">
+          <v-btn color="primary" @click="saveShip">保存船舶</v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <v-card class="page-card">
+      <v-card-text>
+        <div class="toolbar-row">
+          <div class="section-title">船舶列表</div>
+          <div class="muted-text">点击某条船舶记录，可切换到对应的货舱管理区域。</div>
+        </div>
+
+        <div class="table-shell">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>代码</th>
+                <th>船名</th>
+                <th>船型</th>
+                <th>设计 GM</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="ship in store.ships"
+                :key="ship.id"
+                class="clickable-row"
+                :class="{ selected: selectedShip?.id === ship.id }"
+                @click="selectShip(ship)"
+              >
+                <td>{{ ship.shipCode }}</td>
+                <td>{{ ship.shipName }}</td>
+                <td>{{ formatShipType(ship.shipType) }}</td>
+                <td>{{ formatNumber(ship.designGM) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <v-card v-if="selectedShip" class="page-card">
+      <v-card-text>
+        <div class="toolbar-row">
+          <div>
+            <div class="section-title">货舱管理 - {{ selectedShip.shipName }}</div>
+            <div class="muted-text">为当前船舶维护各货舱尺寸、重量上限与重心位置。</div>
+          </div>
+          <v-chip color="secondary" variant="tonal">当前选中：{{ selectedShip.shipCode }}</v-chip>
+        </div>
+
+        <div class="form-grid mt-4">
+          <v-text-field v-model="holdForm.holdNo" label="舱号" />
+          <app-number-field v-model="holdForm.length" label="长度" :min="1" />
+          <app-number-field v-model="holdForm.width" label="宽度" :min="1" />
+          <app-number-field v-model="holdForm.height" label="高度" :min="1" />
+          <app-number-field v-model="holdForm.volume" label="容积" :min="1" />
+          <app-number-field v-model="holdForm.lcg" label="LCG" />
+          <app-number-field v-model="holdForm.tcg" label="TCG" />
+          <app-number-field v-model="holdForm.vcg" label="VCG" :min="0" />
+          <app-number-field v-model="holdForm.maxLoadWeight" label="最大载重" :min="1" />
+          <app-number-field v-model="holdForm.deckStrengthLimit" label="甲板强度上限" :min="1" />
+          <app-number-field v-model="holdForm.sequenceNo" label="顺序号" :min="1" />
+        </div>
+
+        <v-textarea v-model="holdForm.remark" label="备注" rows="2" class="mt-4" />
+
+        <div class="mt-4">
+          <v-btn color="primary" @click="saveHold">保存货舱</v-btn>
+        </div>
+
+        <div class="table-shell mt-6">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>舱号</th>
+                <th>长度</th>
+                <th>宽度</th>
+                <th>高度</th>
+                <th>容积</th>
+                <th>最大载重</th>
+                <th>LCG</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="hold in holds" :key="hold.id">
+                <td>{{ hold.holdNo }}</td>
+                <td>{{ formatNumber(hold.length) }}</td>
+                <td>{{ formatNumber(hold.width) }}</td>
+                <td>{{ formatNumber(hold.height) }}</td>
+                <td>{{ formatNumber(hold.volume) }}</td>
+                <td>{{ formatNumber(hold.maxLoadWeight) }}</td>
+                <td>{{ formatNumber(hold.lcg) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { ElMessage } from 'element-plus';
 
+import AppNumberField from '@/components/AppNumberField.vue';
 import { usePlanStore } from '@/store/plan';
+import { useUiStore } from '@/store/ui';
 import type { Hold, Ship } from '@/types';
+import { formatNumber, formatShipType } from '@/utils/formatters';
 
 const store = usePlanStore();
+const ui = useUiStore();
 const selectedShip = ref<Ship | null>(null);
+
+const shipTypes = [{ title: '件杂货船', value: 'GENERAL_CARGO' }];
 
 function buildSuffix() {
   return `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)
@@ -147,28 +217,43 @@ function selectShip(ship: Ship) {
 async function saveShip() {
   try {
     await store.saveShip(shipForm);
-    ElMessage.success('船舶已保存');
+    ui.success('船舶已保存');
     Object.assign(shipForm, createShipForm());
   } catch (error) {
-    ElMessage.error((error as Error).message);
+    ui.error((error as Error).message);
   }
 }
 
 async function saveHold() {
   if (!selectedShip.value?.id) {
-    ElMessage.warning('请先选择船舶');
+    ui.warning('请先选择船舶');
     return;
   }
   try {
     await store.saveHold(selectedShip.value.id, holdForm);
-    ElMessage.success('货舱已保存');
+    ui.success('货舱已保存');
     Object.assign(holdForm, createHoldForm((holds.value?.length ?? 0) + 1));
   } catch (error) {
-    ElMessage.error((error as Error).message);
+    ui.error((error as Error).message);
   }
 }
-
-function formatShipType(shipType: string) {
-  return shipType === 'GENERAL_CARGO' ? '件杂货船' : shipType;
-}
 </script>
+
+<style scoped>
+.table-shell {
+  overflow-x: auto;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.clickable-row:hover {
+  background: rgba(15, 92, 115, 0.05);
+}
+
+.clickable-row.selected {
+  background: rgba(15, 92, 115, 0.1);
+}
+</style>

@@ -4,7 +4,7 @@
       <div>
         <div class="section-title">{{ hold ? `${hold.holdNo} 三维视图` : '货舱三维视图' }}</div>
         <div class="viewer-subtitle">
-          {{ hold ? `尺寸 ${hold.length} x ${hold.width} x ${hold.height} 米` : '请选择货舱查看配载。' }}
+          {{ hold ? `尺寸 ${hold.length} × ${hold.width} × ${hold.height} 米` : '请选择货舱查看三维配载。' }}
         </div>
       </div>
       <div class="viewer-legend">
@@ -36,10 +36,15 @@
             <div class="detail-name">{{ selectedEntry.cargo?.cargoCode ?? `货物 ${selectedEntry.item.cargoId}` }}</div>
             <div class="detail-subtitle">{{ selectedEntry.cargo?.cargoName ?? '未命名货物' }}</div>
             <div class="detail-list">
-              <span>类别：{{ formatCategory(selectedEntry.cargo?.cargoCategory) }}</span>
-              <span>重量：{{ selectedEntry.cargo?.weight?.toFixed(1) ?? '-' }} 吨</span>
-              <span>尺寸：{{ selectedEntry.item.placedLength }} x {{ selectedEntry.item.placedWidth }} x {{ selectedEntry.item.placedHeight }}</span>
-              <span>原点：({{ selectedEntry.item.originX }}, {{ selectedEntry.item.originY }}, {{ selectedEntry.item.originZ }})</span>
+              <span>类别：{{ formatCargoCategory(selectedEntry.cargo?.cargoCategory) }}</span>
+              <span>重量：{{ selectedEntry.cargo?.weight?.toFixed(1) ?? '-' }} T</span>
+              <span>
+                尺寸：{{ selectedEntry.item.placedLength }} × {{ selectedEntry.item.placedWidth }} ×
+                {{ selectedEntry.item.placedHeight }}
+              </span>
+              <span>
+                原点：({{ selectedEntry.item.originX }}, {{ selectedEntry.item.originY }}, {{ selectedEntry.item.originZ }})
+              </span>
               <span>层号：{{ selectedEntry.item.layerNo }}</span>
               <span>状态：{{ formatStatus(selectedEntry.item.status) }}</span>
               <span v-if="selectedEntry.hasWarning" class="warning-text">该货物存在关联告警。</span>
@@ -58,6 +63,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import type { Cargo, Hold, StowageItem, WarningRecord } from '@/types';
+import { formatCargoCategory, formatStatus } from '@/utils/formatters';
 
 type ItemEntry = {
   key: string;
@@ -119,35 +125,14 @@ const holdWarningCount = computed(() => {
   ).length;
 });
 
-function formatCategory(category?: string) {
-  const categoryMap: Record<string, string> = {
-    STEEL: '钢材',
-    TIMBER: '木材',
-    EQUIPMENT: '设备',
-    PROJECT: '工程货',
-    PIPE: '管材',
-    DANGEROUS: '危险货',
-  };
-  return category ? (categoryMap[category] ?? category) : '-';
-}
-
-function formatStatus(status?: string) {
-  const statusMap: Record<string, string> = {
-    PLACED: '已摆放',
-    UNPLACED: '未摆放',
-    GENERATED: '已生成',
-  };
-  return status ? (statusMap[status] ?? status) : '-';
-}
-
 function colorForEntry(entry: ItemEntry) {
   if (entry.hasWarning) {
-    return '#c2410c';
+    return '#b3261e';
   }
   if (entry.cargo?.dangerousClass) {
-    return '#d17b0f';
+    return '#c57b14';
   }
-  return '#124e66';
+  return '#0f5c73';
 }
 
 function disposeThreeScene() {
@@ -365,7 +350,7 @@ onBeforeUnmount(() => {
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(18, 78, 102, 0.12);
+  border: 1px solid rgba(15, 92, 115, 0.12);
   font-size: 13px;
 }
 
@@ -377,15 +362,15 @@ onBeforeUnmount(() => {
 }
 
 .legend-dot.normal {
-  background: #124e66;
+  background: #0f5c73;
 }
 
 .legend-dot.dangerous {
-  background: #d17b0f;
+  background: #c57b14;
 }
 
 .legend-dot.warning {
-  background: #c2410c;
+  background: #b3261e;
 }
 
 .viewer-body {
@@ -400,7 +385,7 @@ onBeforeUnmount(() => {
   border-radius: 18px;
   overflow: hidden;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(219, 234, 254, 0.55));
-  box-shadow: inset 0 0 0 1px rgba(18, 78, 102, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(15, 92, 115, 0.1);
 }
 
 .side-panel {
@@ -413,7 +398,7 @@ onBeforeUnmount(() => {
   padding: 14px 16px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(18, 78, 102, 0.1);
+  border: 1px solid rgba(15, 92, 115, 0.1);
 }
 
 .meta-label {
@@ -425,18 +410,18 @@ onBeforeUnmount(() => {
 .meta-value {
   font-size: 24px;
   font-weight: 700;
-  color: #124e66;
+  color: #0f5c73;
 }
 
 .meta-value.danger {
-  color: #c2410c;
+  color: #b3261e;
 }
 
 .detail-panel {
   padding: 16px;
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(18, 78, 102, 0.06));
-  border: 1px solid rgba(18, 78, 102, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(15, 92, 115, 0.06));
+  border: 1px solid rgba(15, 92, 115, 0.12);
   min-height: 228px;
 }
 
@@ -448,7 +433,7 @@ onBeforeUnmount(() => {
 .detail-name {
   font-size: 18px;
   font-weight: 700;
-  color: #124e66;
+  color: #0f5c73;
 }
 
 .detail-subtitle {
@@ -471,7 +456,7 @@ onBeforeUnmount(() => {
 }
 
 .warning-text {
-  color: #c2410c;
+  color: #b3261e;
   font-weight: 600;
 }
 

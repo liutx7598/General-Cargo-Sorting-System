@@ -10,7 +10,12 @@ from app.solver.evaluator import build_empty_summary, evaluate_compliance
 from app.solver.hold_allocator import allocate_holds
 from app.solver.optimizer import pack_assignment, repair_assignment
 from app.solver.rule_checker import check_rule_violations
-from app.solver.stability import calculate_gm, calculate_hold_centroid, calculate_longitudinal_index, calculate_ship_centroid
+from app.solver.stability import (
+    calculate_gm,
+    calculate_hold_centroid,
+    calculate_longitudinal_index_in_ship_coordinates,
+    calculate_ship_centroid,
+)
 from app.utils.logging import get_logger
 
 
@@ -82,6 +87,7 @@ def to_cargo_data(request_cargos) -> list[CargoData]:
             center_offset_y=cargo.centerOffsetY,
             center_offset_z=cargo.centerOffsetZ,
             remark=cargo.remark,
+            segregation_code=cargo.segregationCode,
         )
         for cargo in request_cargos
     ]
@@ -117,6 +123,7 @@ def summarize(
     hold_item_map: dict[int, list[PlacedCargo]] = defaultdict(list)
     for item in items:
         hold_item_map[item.hold_id].append(item)
+    holds_by_id = {hold.id: hold for hold in holds}
 
     hold_summaries = [
         calculate_hold_centroid(hold.id, hold.hold_no, hold.volume, hold_item_map.get(hold.id, []))
@@ -126,9 +133,9 @@ def summarize(
         abs(current.utilization - next_item.utilization)
         for current, next_item in zip(hold_summaries, hold_summaries[1:])
     ]
-    ship_metrics = calculate_ship_centroid(ship, items)
+    ship_metrics = calculate_ship_centroid(ship, items, holds_by_id=holds_by_id)
     _, gm = calculate_gm(ship_metrics["displacement"], ship_metrics["kg"], hydrostatic_table, fsc=fsc)
-    ix = calculate_longitudinal_index(items, ship_metrics["lcg"])
+    ix = calculate_longitudinal_index_in_ship_coordinates(items, ship_metrics["lcg"], holds_by_id=holds_by_id)
     compliance_status, reasons = evaluate_compliance(
         warnings=warnings,
         hold_summaries=hold_summaries,
@@ -167,7 +174,13 @@ def generate_stowage_plan(request: GeneratePlanRequest) -> PlanResult:
     config = request.config
     logs = ["Phase A: filtering candidate holds", "Phase B: assignment with greedy seed + CP-SAT"]
 
-    assignment, solver_status, candidate_map = allocate_holds(ship, cargos, holds, config.solverTimeLimitSeconds)
+    assignment, solver_status, candidate_map = allocate_holds(
+        ship,
+        cargos,
+        holds,
+        config.solverTimeLimitSeconds,
+        config.defaultIsolationDistance,
+    )
     if not assignment:
         return PlanResult(
             success=False,

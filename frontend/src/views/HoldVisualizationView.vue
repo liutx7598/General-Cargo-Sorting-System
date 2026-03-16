@@ -1,39 +1,50 @@
 <template>
-  <div v-if="detail" class="page-grid visualization-page">
-    <div class="page-card hero-card">
-      <div>
-        <div class="section-title">配载图</div>
-        <div class="hero-subtitle">主视图为二维总配载图，风格接近人工配载图纸；三维视图作为辅助检查工具保留。</div>
-      </div>
-      <div class="hero-meta">
-        <span class="hero-chip">方案 {{ detail.plan.planNo }}</span>
-        <span class="hero-chip">状态 {{ formatStatus(detail.plan.status) }}</span>
-        <span class="hero-chip" :class="{ pass: detail.plan.complianceStatus === 'PASS', fail: detail.plan.complianceStatus !== 'PASS' }">
-          {{ formatCompliance(detail.plan.complianceStatus) }}
-        </span>
-        <span class="hero-chip warning">告警 {{ detail.warnings.length }}</span>
-      </div>
-    </div>
+  <div v-if="detail" class="page-shell visualization-page">
+    <v-card class="page-card hero-card">
+      <v-card-text class="hero-content">
+        <div>
+          <div class="section-title">配载可视化</div>
+          <div class="muted-text">主视图为二维总配载图，三维视图用于检查单舱摆位细节。</div>
+        </div>
+        <div class="hero-meta">
+          <v-chip color="primary" variant="tonal">方案 {{ detail.plan.planNo }}</v-chip>
+          <v-chip color="info" variant="tonal">状态 {{ formatStatus(detail.plan.status) }}</v-chip>
+          <v-chip
+            :color="detail.plan.complianceStatus === 'PASS' ? 'success' : 'error'"
+            variant="tonal"
+          >
+            {{ formatCompliance(detail.plan.complianceStatus) }}
+          </v-chip>
+          <v-chip color="warning" variant="tonal">告警 {{ detail.warnings.length }}</v-chip>
+        </div>
+      </v-card-text>
+    </v-card>
 
-    <div class="page-card control-card">
-      <div class="control-group">
-        <span class="control-label">聚焦货舱</span>
-        <el-select v-model="selectedHoldId" clearable placeholder="高亮一个货舱" style="width: 220px;">
-          <el-option v-for="hold in holds" :key="hold.id" :label="hold.holdNo" :value="hold.id" />
-        </el-select>
-      </div>
-      <div class="control-group">
-        <span class="control-label">层号</span>
-        <el-select v-model="selectedLayer" style="width: 180px;">
-          <el-option label="全部层" value="ALL" />
-          <el-option v-for="layer in layerOptions" :key="layer" :label="`第 ${layer} 层`" :value="layer" />
-        </el-select>
-      </div>
-      <div class="control-group">
-        <span class="control-label">当前货物</span>
-        <span class="control-value">{{ selectedCargoLabel }}</span>
-      </div>
-    </div>
+    <v-card class="page-card">
+      <v-card-text>
+        <div class="control-grid">
+          <v-select
+            v-model="selectedHoldId"
+            :items="holdOptions"
+            item-title="title"
+            item-value="value"
+            clearable
+            label="聚焦货舱"
+          />
+          <v-select
+            v-model="selectedLayer"
+            :items="layerSelectOptions"
+            item-title="title"
+            item-value="value"
+            label="层号"
+          />
+          <div class="selected-info">
+            <span class="selected-label">当前货物</span>
+            <span class="selected-value">{{ selectedCargoLabel }}</span>
+          </div>
+        </div>
+      </v-card-text>
+    </v-card>
 
     <stowage-deck-plan
       :holds="holds"
@@ -47,51 +58,76 @@
     />
 
     <div class="detail-grid">
-      <div class="page-grid">
-        <div class="page-card">
-          <div class="section-title">当前货舱摘要</div>
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="货舱">{{ focusedHold?.holdNo ?? '-' }}</el-descriptions-item>
-            <el-descriptions-item label="货物数量">{{ focusedHoldItems.length }}</el-descriptions-item>
-            <el-descriptions-item label="重量">{{ formatNumber(focusedSummary?.totalWeight) }} 吨</el-descriptions-item>
-            <el-descriptions-item label="利用率">{{ formatPercent(focusedSummary?.utilization) }}</el-descriptions-item>
-            <el-descriptions-item label="重心">
-              ({{ formatNumber(focusedSummary?.centroidX) }}, {{ formatNumber(focusedSummary?.centroidY) }}, {{ formatNumber(focusedSummary?.centroidZ) }})
-            </el-descriptions-item>
-          </el-descriptions>
-        </div>
+      <div class="page-shell">
+        <v-card class="page-card">
+          <v-card-text>
+            <div class="section-title">当前货舱摘要</div>
+            <div class="summary-stack">
+              <div class="summary-row"><span>货舱</span><strong>{{ focusedHold?.holdNo ?? '-' }}</strong></div>
+              <div class="summary-row"><span>货物数量</span><strong>{{ focusedHoldItems.length }}</strong></div>
+              <div class="summary-row"><span>重量</span><strong>{{ formatNumber(focusedSummary?.totalWeight) }} T</strong></div>
+              <div class="summary-row"><span>利用率</span><strong>{{ formatPercent(focusedSummary?.utilization) }}</strong></div>
+              <div class="summary-row">
+                <span>重心</span>
+                <strong>
+                  ({{ formatNumber(focusedSummary?.centroidX) }}, {{ formatNumber(focusedSummary?.centroidY) }},
+                  {{ formatNumber(focusedSummary?.centroidZ) }})
+                </strong>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
 
-        <div class="page-card">
-          <div class="section-title">当前货物详情</div>
-          <el-empty v-if="!selectedCargo" description="点击二维配载图中的货物块查看详情。" />
-          <el-descriptions v-else :column="1" border>
-            <el-descriptions-item label="编码">{{ selectedCargo.cargoCode }}</el-descriptions-item>
-            <el-descriptions-item label="名称">{{ selectedCargo.cargoName }}</el-descriptions-item>
-            <el-descriptions-item label="类别">{{ formatCategory(selectedCargo.cargoCategory) }}</el-descriptions-item>
-            <el-descriptions-item label="重量">{{ formatNumber(selectedCargo.weight) }} 吨</el-descriptions-item>
-            <el-descriptions-item label="危险等级">{{ selectedCargo.dangerousClass ?? '-' }}</el-descriptions-item>
-            <el-descriptions-item label="摆放尺寸">
-              {{ selectedItem?.placedLength }} x {{ selectedItem?.placedWidth }} x {{ selectedItem?.placedHeight }}
-            </el-descriptions-item>
-            <el-descriptions-item label="原点">
-              ({{ selectedItem?.originX }}, {{ selectedItem?.originY }}, {{ selectedItem?.originZ }})
-            </el-descriptions-item>
-            <el-descriptions-item label="层号">{{ selectedItem?.layerNo }}</el-descriptions-item>
-          </el-descriptions>
-        </div>
+        <v-card class="page-card">
+          <v-card-text>
+            <div class="section-title">当前货物详情</div>
+            <div v-if="selectedCargo" class="summary-stack">
+              <div class="summary-row"><span>编码</span><strong>{{ selectedCargo.cargoCode }}</strong></div>
+              <div class="summary-row"><span>名称</span><strong>{{ selectedCargo.cargoName }}</strong></div>
+              <div class="summary-row"><span>类别</span><strong>{{ formatCargoCategory(selectedCargo.cargoCategory) }}</strong></div>
+              <div class="summary-row"><span>重量</span><strong>{{ formatNumber(selectedCargo.weight) }} T</strong></div>
+              <div class="summary-row"><span>危险等级</span><strong>{{ selectedCargo.dangerousClass ?? '-' }}</strong></div>
+              <div class="summary-row">
+                <span>摆放尺寸</span>
+                <strong>{{ selectedItem?.placedLength }} × {{ selectedItem?.placedWidth }} × {{ selectedItem?.placedHeight }}</strong>
+              </div>
+              <div class="summary-row">
+                <span>原点</span>
+                <strong>({{ selectedItem?.originX }}, {{ selectedItem?.originY }}, {{ selectedItem?.originZ }})</strong>
+              </div>
+              <div class="summary-row"><span>层号</span><strong>{{ selectedItem?.layerNo }}</strong></div>
+            </div>
+            <v-alert v-else type="info" variant="tonal" text="点击二维配载图中的货物块查看详情。" />
+          </v-card-text>
+        </v-card>
 
-        <div class="page-card">
-          <div class="section-title">货舱货物表</div>
-          <el-table :data="focusedHoldRows" stripe max-height="300">
-            <el-table-column prop="cargoCode" label="编码" width="120" />
-            <el-table-column prop="cargoName" label="名称" min-width="140" />
-            <el-table-column prop="weight" label="重量" width="90" />
-            <el-table-column prop="layerNo" label="层号" width="80" />
-            <el-table-column label="原点" min-width="150">
-              <template #default="{ row }">({{ row.originX }}, {{ row.originY }}, {{ row.originZ }})</template>
-            </el-table-column>
-          </el-table>
-        </div>
+        <v-card class="page-card">
+          <v-card-text>
+            <div class="section-title">货舱货物表</div>
+            <div class="table-shell">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>编码</th>
+                    <th>名称</th>
+                    <th>重量</th>
+                    <th>层号</th>
+                    <th>原点</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in focusedHoldRows" :key="`${row.cargoCode}-${row.layerNo}-${row.originX}`">
+                    <td>{{ row.cargoCode }}</td>
+                    <td>{{ row.cargoName }}</td>
+                    <td>{{ row.weight }}</td>
+                    <td>{{ row.layerNo }}</td>
+                    <td>({{ row.originX }}, {{ row.originY }}, {{ row.originZ }})</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </v-card-text>
+        </v-card>
       </div>
 
       <hold-viewer
@@ -103,7 +139,7 @@
     </div>
   </div>
 
-  <el-empty v-else description="正在加载配载可视化..." />
+  <v-alert v-else type="info" variant="tonal" text="正在加载配载可视化..." />
 </template>
 
 <script setup lang="ts">
@@ -113,6 +149,7 @@ import { useRoute } from 'vue-router';
 import HoldViewer from '@/components/HoldViewer.vue';
 import StowageDeckPlan from '@/components/StowageDeckPlan.vue';
 import { usePlanStore } from '@/store/plan';
+import { formatCargoCategory, formatCompliance, formatNumber, formatPercent, formatStatus } from '@/utils/formatters';
 
 const route = useRoute();
 const store = usePlanStore();
@@ -126,6 +163,18 @@ const holds = computed(() => (shipId.value ? store.holdsByShip[shipId.value] ?? 
 const layerOptions = computed(() =>
   [...new Set((detail.value?.items ?? []).map((item) => item.layerNo))].sort((left, right) => left - right),
 );
+
+const holdOptions = computed(() =>
+  holds.value.map((hold) => ({
+    title: hold.holdNo,
+    value: hold.id,
+  })),
+);
+
+const layerSelectOptions = computed(() => [
+  { title: '全部层', value: 'ALL' as const },
+  ...layerOptions.value.map((layer) => ({ title: `第 ${layer} 层`, value: layer })),
+]);
 
 const visibleItems = computed(() =>
   (detail.value?.items ?? []).filter((item) => selectedLayer.value === 'ALL' || item.layerNo === selectedLayer.value),
@@ -198,10 +247,9 @@ watch(
 );
 
 watch(selectedLayer, () => {
-  if (selectedItem.value) {
-    return;
+  if (!selectedItem.value) {
+    selectedItemId.value = undefined;
   }
-  selectedItemId.value = undefined;
 });
 
 watch(
@@ -222,45 +270,6 @@ function handleSelectItem(itemId: number) {
     selectedHoldId.value = item.holdId;
   }
 }
-
-function formatNumber(value?: number | null) {
-  return value == null ? '-' : value.toFixed(2);
-}
-
-function formatPercent(value?: number | null) {
-  return value == null ? '-' : `${(value * 100).toFixed(1)}%`;
-}
-
-function formatStatus(status?: string) {
-  const statusMap: Record<string, string> = {
-    DRAFT: '草稿',
-    GENERATED: '已生成',
-    PENDING: '待处理',
-    PLANNING: '规划中',
-  };
-  return status ? (statusMap[status] ?? status) : '-';
-}
-
-function formatCompliance(status?: string) {
-  const complianceMap: Record<string, string> = {
-    PASS: '通过',
-    FAIL: '不通过',
-    PENDING: '待判定',
-  };
-  return status ? (complianceMap[status] ?? status) : '-';
-}
-
-function formatCategory(category?: string) {
-  const categoryMap: Record<string, string> = {
-    STEEL: '钢材',
-    TIMBER: '木材',
-    EQUIPMENT: '设备',
-    PROJECT: '工程货',
-    PIPE: '管材',
-    DANGEROUS: '危险货',
-  };
-  return category ? (categoryMap[category] ?? category) : '-';
-}
 </script>
 
 <style scoped>
@@ -269,66 +278,46 @@ function formatCategory(category?: string) {
 }
 
 .hero-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(235, 244, 248, 0.96));
+}
+
+.hero-content {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
 }
 
-.hero-subtitle {
-  color: #5f7383;
-  font-size: 14px;
-}
-
 .hero-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.hero-chip {
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid rgba(18, 78, 102, 0.12);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.hero-chip.pass {
-  color: #166534;
-  border-color: rgba(22, 101, 52, 0.18);
-}
-
-.hero-chip.fail,
-.hero-chip.warning {
-  color: #c2410c;
-  border-color: rgba(194, 65, 12, 0.18);
-}
-
-.control-card {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  align-items: center;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.control-label {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
+.control-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start;
 }
 
-.control-value {
-  color: #124e66;
-  font-weight: 600;
+.selected-info {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(15, 92, 115, 0.05);
+  border: 1px solid rgba(15, 92, 115, 0.08);
+}
+
+.selected-label {
+  display: block;
+  color: #6b7b8c;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.selected-value {
+  color: #17324d;
+  font-weight: 700;
 }
 
 .detail-grid {
@@ -338,8 +327,36 @@ function formatCategory(category?: string) {
   align-items: start;
 }
 
+.summary-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 92, 115, 0.08);
+}
+
+.summary-row span {
+  color: #6b7b8c;
+}
+
+.summary-row strong {
+  text-align: right;
+  color: #17324d;
+}
+
+.table-shell {
+  overflow-x: auto;
+}
+
 @media (max-width: 1180px) {
-  .hero-card {
+  .hero-content {
     flex-direction: column;
     align-items: flex-start;
   }

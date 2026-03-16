@@ -78,7 +78,7 @@
             stroke="rgba(15, 23, 42, 0.18)"
             stroke-width="1"
           />
-          <text :x="cargoRect.x + 10" :y="cargoRect.y + 17" class="layer-badge">{{ cargoRect.layerNo }}层</text>
+          <text :x="cargoRect.x + 10" :y="cargoRect.y + 17" class="layer-badge">L{{ cargoRect.layerNo }}</text>
 
           <g v-if="!cargoRect.verticalText">
             <text
@@ -105,7 +105,7 @@
       </svg>
     </div>
 
-    <el-empty v-else description="当前筛选条件下暂无配载数据。" />
+    <v-alert v-else type="info" variant="tonal" text="当前筛选条件下没有配载数据。" />
   </div>
 </template>
 
@@ -113,6 +113,7 @@
 import { computed } from 'vue';
 
 import type { Cargo, Hold, StowageItem, WarningRecord } from '@/types';
+import { formatCargoCategory } from '@/utils/formatters';
 
 type HoldRect = {
   hold: Hold;
@@ -216,18 +217,6 @@ function shortenName(name: string | undefined, maxLength: number) {
   return name.length <= maxLength ? name : `${name.slice(0, Math.max(0, maxLength - 1))}…`;
 }
 
-function formatCargoCategory(category?: string) {
-  const categoryMap: Record<string, string> = {
-    STEEL: '钢材',
-    TIMBER: '木材',
-    EQUIPMENT: '设备',
-    PROJECT: '工程货',
-    PIPE: '管材',
-    DANGEROUS: '危险货',
-  };
-  return category ? (categoryMap[category] ?? category) : '';
-}
-
 const cargoRects = computed<CargoRect[]>(() => {
   const holdRectMap = new Map(holdRects.value.map((entry) => [entry.hold.id, entry]));
   const rectangles: CargoRect[] = [];
@@ -248,20 +237,20 @@ const cargoRects = computed<CargoRect[]>(() => {
     const verticalText = width < 92 && height > 110;
     const fontSize = width < 110 || height < 58 ? 12 : 14;
     const itemId = item.id ?? index + 1;
-    const weightText = cargo?.weight != null ? `${cargo.weight.toFixed(1)}吨` : '';
+    const weightText = cargo?.weight != null ? `${cargo.weight.toFixed(1)}T` : '';
     const dimensionText = `${item.placedLength}*${item.placedWidth}*${item.placedHeight}`;
     const titleText = [cargo?.cargoCode ?? `C${item.cargoId}`, shortenName(cargo?.cargoName, verticalText ? 8 : 12), weightText]
       .filter(Boolean)
       .join(' ');
     const tooltip = [
-      `货物：${cargo?.cargoCode ?? item.cargoId}`,
-      cargo?.cargoName ? `名称：${cargo.cargoName}` : undefined,
-      cargo?.cargoCategory ? `类别：${formatCargoCategory(cargo.cargoCategory)}` : undefined,
-      cargo?.weight != null ? `重量：${cargo.weight.toFixed(1)}吨` : undefined,
-      `尺寸：${dimensionText}`,
-      `原点：(${item.originX}, ${item.originY}, ${item.originZ})`,
-      `货舱：${holdRect.hold.holdNo}`,
-      `层号：${item.layerNo}`,
+      `货物: ${cargo?.cargoCode ?? item.cargoId}`,
+      cargo?.cargoName ? `名称: ${cargo.cargoName}` : undefined,
+      cargo?.cargoCategory ? `类别: ${formatCargoCategory(cargo.cargoCategory)}` : undefined,
+      cargo?.weight != null ? `重量: ${cargo.weight.toFixed(1)}T` : undefined,
+      `尺寸: ${dimensionText}`,
+      `原点: (${item.originX}, ${item.originY}, ${item.originZ})`,
+      `货舱: ${holdRect.hold.holdNo}`,
+      `层号: ${item.layerNo}`,
     ]
       .filter(Boolean)
       .join('\n');
@@ -327,7 +316,7 @@ function selectItem(itemId: number, holdId: number) {
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.76);
-  border: 1px solid rgba(18, 78, 102, 0.12);
+  border: 1px solid rgba(15, 92, 115, 0.12);
   font-size: 13px;
 }
 
@@ -390,5 +379,11 @@ function selectItem(itemId: number, holdId: number) {
   fill: #17212b;
   font-weight: 600;
   letter-spacing: 0.1px;
+}
+
+@media (max-width: 960px) {
+  .deck-plan-header {
+    flex-direction: column;
+  }
 }
 </style>

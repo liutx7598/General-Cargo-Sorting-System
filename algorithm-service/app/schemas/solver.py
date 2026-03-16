@@ -60,6 +60,7 @@ class CargoSchema(BaseModel):
     centerOffsetX: float = 0.0
     centerOffsetY: float = 0.0
     centerOffsetZ: float = 0.0
+    segregationCode: int | None = None
     remark: str | None = None
 
 
@@ -260,4 +261,3 @@ class GeneratePlanResponse(BaseModel):
     warnings: list[WarningResponse]
     metrics: SolverMetricsResponse
     reasonList: list[str]
-

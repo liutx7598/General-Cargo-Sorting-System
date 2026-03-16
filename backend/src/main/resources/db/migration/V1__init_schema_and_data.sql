@@ -51,6 +51,7 @@ CREATE TABLE cargo (
     dangerous_class VARCHAR(32),
     incompatible_tags VARCHAR(255),
     isolation_level DOUBLE PRECISION NOT NULL DEFAULT 0,
+    segregation_code INTEGER,
     weight DOUBLE PRECISION NOT NULL,
     length DOUBLE PRECISION NOT NULL,
     width DOUBLE PRECISION NOT NULL,
@@ -169,19 +170,19 @@ INSERT INTO ship_hydrostatic (id, ship_id, displacement, km_value, draft, note) 
     (7, 1, 3800.0, 8.63, 6.5, 'sample-6');
 
 INSERT INTO cargo (
-    id, cargo_code, cargo_name, cargo_category, dangerous_class, incompatible_tags, isolation_level,
+    id, cargo_code, cargo_name, cargo_category, dangerous_class, incompatible_tags, isolation_level, segregation_code,
     weight, length, width, height, stackable, rotatable, center_offset_x, center_offset_y, center_offset_z, remark
 ) VALUES
-    (11, 'CG-001', '普通钢卷 A', 'STEEL', NULL, '', 0.0, 30.5, 6.0, 2.4, 2.2, TRUE, TRUE, 0.0, 0.0, 0.0, '普通钢材'),
-    (12, 'CG-002', '普通钢卷 B', 'STEEL', NULL, '', 0.0, 28.0, 5.8, 2.3, 2.1, TRUE, TRUE, 0.0, 0.0, 0.0, '普通钢材'),
-    (13, 'CG-003', '型钢束', 'STEEL', NULL, '', 0.0, 24.0, 8.0, 1.8, 1.6, TRUE, TRUE, 0.0, 0.0, 0.0, '钢材'),
-    (14, 'CG-004', '木材包 A', 'TIMBER', NULL, 'SPARK', 1.5, 18.0, 7.0, 2.2, 2.4, TRUE, TRUE, 0.0, 0.0, 0.0, '木材'),
-    (15, 'CG-005', '木材包 B', 'TIMBER', NULL, 'SPARK', 1.5, 16.5, 6.5, 2.2, 2.2, TRUE, TRUE, 0.0, 0.0, 0.0, '木材'),
-    (16, 'CG-006', '设备箱 A', 'EQUIPMENT', NULL, '', 0.0, 40.0, 4.0, 3.2, 3.0, FALSE, TRUE, 0.0, 0.0, 0.0, '设备箱'),
-    (17, 'CG-007', '设备箱 B', 'EQUIPMENT', NULL, '', 0.0, 35.0, 4.5, 3.0, 2.8, FALSE, TRUE, 0.0, 0.0, 0.0, '设备箱'),
-    (18, 'CG-008', '危险品包装货', 'DANGEROUS', '3', 'SPARK', 3.0, 12.0, 3.0, 2.5, 2.4, FALSE, TRUE, 0.0, 0.0, 0.0, '危险品包装货'),
-    (19, 'CG-009', '机械备件', 'PROJECT', NULL, '', 0.0, 22.0, 5.0, 2.5, 2.0, TRUE, TRUE, 0.0, 0.0, 0.0, '工程备件'),
-    (20, 'CG-010', '管束', 'PIPE', NULL, '', 0.0, 14.0, 9.0, 1.5, 1.5, TRUE, TRUE, 0.0, 0.0, 0.0, '长件货');
+    (11, 'CG-001', '普通钢卷 A', 'STEEL', NULL, '', 0.0, NULL, 30.5, 6.0, 2.4, 2.2, TRUE, TRUE, 0.0, 0.0, 0.0, '普通钢材'),
+    (12, 'CG-002', '普通钢卷 B', 'STEEL', NULL, '', 0.0, NULL, 28.0, 5.8, 2.3, 2.1, TRUE, TRUE, 0.0, 0.0, 0.0, '普通钢材'),
+    (13, 'CG-003', '型钢束', 'STEEL', NULL, '', 0.0, NULL, 24.0, 8.0, 1.8, 1.6, TRUE, TRUE, 0.0, 0.0, 0.0, '钢材'),
+    (14, 'CG-004', '木材包 A', 'TIMBER', NULL, 'SPARK', 1.5, NULL, 18.0, 7.0, 2.2, 2.4, TRUE, TRUE, 0.0, 0.0, 0.0, '木材'),
+    (15, 'CG-005', '木材包 B', 'TIMBER', NULL, 'SPARK', 1.5, NULL, 16.5, 6.5, 2.2, 2.2, TRUE, TRUE, 0.0, 0.0, 0.0, '木材'),
+    (16, 'CG-006', '设备箱 A', 'EQUIPMENT', NULL, '', 0.0, NULL, 40.0, 4.0, 3.2, 3.0, FALSE, TRUE, 0.0, 0.0, 0.0, '设备箱'),
+    (17, 'CG-007', '设备箱 B', 'EQUIPMENT', NULL, '', 0.0, NULL, 35.0, 4.5, 3.0, 2.8, FALSE, TRUE, 0.0, 0.0, 0.0, '设备箱'),
+    (18, 'CG-008', '危险品包装货', 'DANGEROUS', '3', 'SPARK', 3.0, 2, 12.0, 3.0, 2.5, 2.4, FALSE, TRUE, 0.0, 0.0, 0.0, '包装危险货，隔离等级 2'),
+    (19, 'CG-009', '机械备件', 'PROJECT', NULL, '', 0.0, NULL, 22.0, 5.0, 2.5, 2.0, TRUE, TRUE, 0.0, 0.0, 0.0, '工程备件'),
+    (20, 'CG-010', '管束', 'PIPE', NULL, '', 0.0, NULL, 14.0, 9.0, 1.5, 1.5, TRUE, TRUE, 0.0, 0.0, 0.0, '长件货');
 
 INSERT INTO voyage (
     id, voyage_no, ship_id, route_info, departure_port, arrival_port, eta, etd, status
@@ -214,4 +215,3 @@ SELECT setval('cargo_id_seq', (SELECT MAX(id) FROM cargo));
 SELECT setval('voyage_id_seq', (SELECT MAX(id) FROM voyage));
 SELECT setval('stowage_plan_id_seq', (SELECT MAX(id) FROM stowage_plan));
 SELECT setval('rule_template_id_seq', (SELECT MAX(id) FROM rule_template));
-

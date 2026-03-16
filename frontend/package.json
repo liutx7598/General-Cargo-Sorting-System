@@ -10,14 +10,15 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.3.1",
+    "@mdi/font": "^7.4.47",
     "axios": "^1.7.7",
     "echarts": "^5.5.1",
-    "element-plus": "^2.8.4",
     "pinia": "^2.2.4",
+    "sass": "^1.98.0",
     "three": "^0.169.0",
     "vue": "^3.5.11",
-    "vue-router": "^4.4.5"
+    "vue-router": "^4.4.5",
+    "vuetify": "^3.12.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

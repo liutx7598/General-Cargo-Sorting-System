@@ -23,13 +23,13 @@ def evaluate_compliance(
     if any(warning.warning_type == "INCOMPATIBLE" for warning in warnings):
         reasons.append("存在忌装违规")
     if any(warning.warning_type == "ISOLATION" for warning in warnings):
-        reasons.append("存在隔离距离不足")
+        reasons.append("存在隔离距离或隔离等级违规")
     if any(warning.warning_type == "UNPLACED" for warning in warnings):
         reasons.append("存在未能摆入货舱的货物")
     if gm < gm_min:
         reasons.append(f"GM={gm:.3f} 低于阈值 {gm_min:.3f}")
     if any(diff > adjacent_hold_diff_max for diff in adjacent_hold_diffs):
-        reasons.append("相邻舱利用率差异超限")
+        reasons.append("相邻货舱利用率差异超限")
     if ix > ix_max:
         reasons.append(f"Ix={ix:.3f} 超过阈值 {ix_max:.3f}")
     if any(summary.utilization > 1.0 + 1e-6 for summary in hold_summaries):
@@ -55,4 +55,3 @@ def build_empty_summary() -> PlanSummary:
         hold_summaries=[],
         adjacent_hold_diffs=[],
     )
-

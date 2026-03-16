@@ -16,6 +16,7 @@ public final class CargoDtos {
         String dangerousClass,
         String incompatibleTags,
         @NotNull(message = "isolationLevel 不能为空") Double isolationLevel,
+        Integer segregationCode,
         @NotNull(message = "weight 不能为空") Double weight,
         @NotNull(message = "length 不能为空") Double length,
         @NotNull(message = "width 不能为空") Double width,
@@ -29,4 +30,3 @@ public final class CargoDtos {
     ) {
     }
 }
-

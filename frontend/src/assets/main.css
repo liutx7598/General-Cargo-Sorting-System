@@ -1,11 +1,13 @@
 :root {
-  --bg: linear-gradient(135deg, #f4efe5 0%, #dfe9f3 100%);
-  --panel: rgba(255, 255, 255, 0.85);
-  --primary: #124e66;
-  --secondary: #748cab;
-  --accent: #d17b0f;
+  --bg: radial-gradient(circle at top, #f6f9fc 0%, #edf2f7 44%, #e3ebf3 100%);
+  --panel: rgba(255, 255, 255, 0.92);
+  --panel-strong: rgba(255, 255, 255, 0.98);
+  --primary: #0f5c73;
+  --secondary: #4f6d7a;
+  --accent: #c57b14;
   --text: #1f2a36;
-  --danger: #c2410c;
+  --muted: #6b7b8c;
+  --danger: #b3261e;
 }
 
 * {
@@ -14,7 +16,7 @@
 
 body {
   margin: 0;
-  font-family: "Segoe UI", "PingFang SC", sans-serif;
+  font-family: "Roboto", "Noto Sans SC", "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -30,8 +32,9 @@ a {
 
 .page-card {
   background: var(--panel);
-  border-radius: 20px;
-  box-shadow: 0 16px 32px rgba(18, 78, 102, 0.12);
+  border-radius: 24px;
+  border: 1px solid rgba(15, 92, 115, 0.08);
+  box-shadow: 0 18px 40px rgba(23, 43, 77, 0.08);
   padding: 20px;
 }
 
@@ -40,8 +43,19 @@ a {
   gap: 16px;
 }
 
+.page-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .section-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   margin-bottom: 12px;
 }
@@ -52,3 +66,44 @@ a {
   color: var(--primary);
 }
 
+.toolbar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.muted-text {
+  color: var(--muted);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(15, 92, 115, 0.08);
+  text-align: left;
+  font-size: 14px;
+}
+
+.data-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.chip-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 92, 115, 0.08);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}

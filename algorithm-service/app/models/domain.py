@@ -67,6 +67,7 @@ class CargoData:
     center_offset_z: float = 0.0
     remark: str | None = None
     candidate_holds: list[int] = field(default_factory=list)
+    segregation_code: int | None = None
 
 
 @dataclass(slots=True)
@@ -190,4 +191,3 @@ def dataclass_to_dict(value: Any) -> Any:
             result[key] = dataclass_to_dict(getattr(value, key))
         return result
     return value
-

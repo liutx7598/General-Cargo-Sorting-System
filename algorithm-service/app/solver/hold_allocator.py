@@ -6,7 +6,7 @@ from ortools.sat.python import cp_model
 
 from app.models.domain import CargoData, HoldData, ShipData
 from app.solver.geometry import ORIENTATION_MAP, rotate_dimensions
-from app.solver.rule_checker import are_cargos_incompatible
+from app.solver.rule_checker import are_cargos_incompatible, build_separation_requirement, holds_satisfy_separation
 
 
 ASSIGNMENT_SCALE = 100
@@ -218,6 +218,7 @@ def allocate_holds(
     cargos: list[CargoData],
     holds: list[HoldData],
     solver_time_limit_seconds: int,
+    default_isolation_distance: float = 1.0,
 ) -> tuple[dict[int, int], str, dict[int, list[int]]]:
     """Stage B: allocate cargoes to holds with compact breakbulk-focused assignment."""
     holds_by_id = {hold.id: hold for hold in holds}
@@ -264,11 +265,30 @@ def allocate_holds(
 
     for index, cargo in enumerate(cargos):
         for other in cargos[index + 1 :]:
-            if not are_cargos_incompatible(cargo, other):
+            if are_cargos_incompatible(cargo, other):
+                common_holds = set(candidate_map[cargo.id]) & set(candidate_map[other.id])
+                for hold_id in common_holds:
+                    model.Add(variable_map[(cargo.id, hold_id)] + variable_map[(other.id, hold_id)] <= 1)
+
+            separation_requirement = build_separation_requirement(cargo, other, default_isolation_distance)
+            if (
+                not separation_requirement.require_different_hold
+                and separation_requirement.min_holds_between <= 0
+                and separation_requirement.min_longitudinal_gap <= 0.0
+            ):
                 continue
-            common_holds = set(candidate_map[cargo.id]) & set(candidate_map[other.id])
-            for hold_id in common_holds:
-                model.Add(variable_map[(cargo.id, hold_id)] + variable_map[(other.id, hold_id)] <= 1)
+
+            for hold_id in candidate_map[cargo.id]:
+                for other_hold_id in candidate_map[other.id]:
+                    if holds_satisfy_separation(
+                        holds_by_id[hold_id],
+                        holds_by_id[other_hold_id],
+                        separation_requirement,
+                    ):
+                        continue
+                    model.Add(
+                        variable_map[(cargo.id, hold_id)] + variable_map[(other.id, other_hold_id)] <= 1
+                    )
 
     objective_terms = []
     for hold in holds:

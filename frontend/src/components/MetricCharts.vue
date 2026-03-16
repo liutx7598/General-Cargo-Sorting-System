@@ -1,5 +1,5 @@
 <template>
-  <div ref="chartRef" class="page-card" style="height: 360px;"></div>
+  <div ref="chartRef" class="page-card chart-card"></div>
 </template>
 
 <script setup lang="ts">
@@ -18,31 +18,33 @@ const chartRef = ref<HTMLDivElement>();
 let chart: echarts.ECharts | undefined;
 
 function render() {
-  if (!chartRef.value) return;
+  if (!chartRef.value) {
+    return;
+  }
   chart ??= echarts.init(chartRef.value);
   chart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { top: 8 },
     xAxis: { type: 'category', data: props.holds.map((item) => item.holdNo) },
-    yAxis: [{ type: 'value', name: '重量/容积' }],
+    yAxis: [{ type: 'value', name: '重量 / 利用率' }],
     series: [
       {
         type: 'bar',
         name: '重量',
         data: props.holds.map((item) => item.totalWeight),
-        itemStyle: { color: '#124e66' },
+        itemStyle: { color: '#0f5c73' },
       },
       {
         type: 'bar',
         name: '利用率',
         data: props.holds.map((item) => Number((item.utilization * 100).toFixed(2))),
-        itemStyle: { color: '#d17b0f' },
+        itemStyle: { color: '#c57b14' },
       },
       {
         type: 'line',
         name: 'GM',
         data: props.holds.map(() => props.gm ?? 0),
-        itemStyle: { color: '#748cab' },
+        itemStyle: { color: '#4c6faf' },
       },
     ],
     graphic: [
@@ -52,7 +54,7 @@ function render() {
         top: '10%',
         style: {
           text: `告警数 ${props.warningCount}`,
-          fill: '#c2410c',
+          fill: '#b3261e',
           font: '600 18px sans-serif',
         },
       },
@@ -66,3 +68,9 @@ watch(() => props.warningCount, render);
 watch(() => props.gm, render);
 onBeforeUnmount(() => chart?.dispose());
 </script>
+
+<style scoped>
+.chart-card {
+  height: 360px;
+}
+</style>

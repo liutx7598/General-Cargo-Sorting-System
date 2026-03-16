@@ -1,72 +1,109 @@
 <template>
-  <div class="page-grid">
-    <div class="page-card">
-      <div class="section-title">创建配载任务</div>
-      <el-form :model="taskForm" label-width="140px">
-        <el-form-item label="航次">
-          <el-select v-model="taskForm.voyageId" style="width: 320px;">
-            <el-option v-for="voyage in store.voyages" :key="voyage.id" :label="voyage.voyageNo" :value="voyage.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="方案编号">
-          <el-input v-model="taskForm.planNo" style="width: 320px;" />
-        </el-form-item>
-        <el-form-item label="选择货物">
-          <el-select v-model="selectedCargoIds" multiple filterable style="width: 100%;">
-            <el-option
-              v-for="cargo in store.cargos"
-              :key="cargo.id"
-              :label="`${cargo.cargoCode} - ${cargo.cargoName}`"
-              :value="cargo.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-divider>阈值配置</el-divider>
-        <el-form-item label="GM 下限"><el-input-number v-model="config.gmMin" :min="0" /></el-form-item>
-        <el-form-item label="相邻舱差"><el-input-number v-model="config.adjacentHoldDiffMax" :min="0" :step="0.1" /></el-form-item>
-        <el-form-item label="Ix 上限"><el-input-number v-model="config.ixMax" :min="0" :step="100" /></el-form-item>
-        <el-form-item label="求解时限"><el-input-number v-model="config.solverTimeLimitSeconds" :min="1" /></el-form-item>
-        <el-form-item label="默认隔离距离">
-          <el-input-number v-model="config.defaultIsolationDistance" :min="0" :step="0.5" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :loading="store.loading" @click="createAndGenerate">生成方案</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
+  <div class="page-shell">
+    <v-card class="page-card">
+      <v-card-text>
+        <div class="toolbar-row">
+          <div>
+            <div class="section-title">创建配载任务</div>
+            <div class="muted-text">选择航次、货物和求解阈值，发起一次完整的配载求解。</div>
+          </div>
+          <v-chip color="primary" variant="tonal">求解时长 {{ config.solverTimeLimitSeconds }} 秒</v-chip>
+        </div>
 
-    <div class="page-card">
-      <div class="section-title">已有方案</div>
-      <el-table :data="store.plans" stripe>
-        <el-table-column prop="planNo" label="方案号" width="180" />
-        <el-table-column label="状态" width="120">
-          <template #default="{ row }">{{ formatStatus(row.status) }}</template>
-        </el-table-column>
-        <el-table-column label="结论" width="120">
-          <template #default="{ row }">{{ formatCompliance(row.complianceStatus) }}</template>
-        </el-table-column>
-        <el-table-column prop="gm" label="GM" width="120" />
-        <el-table-column label="操作" width="260">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="goResult(row.id)">结果</el-button>
-            <el-button link type="warning" @click="goVisualization(row.id)">可视化</el-button>
-            <el-button link type="danger" @click="goWarnings(row.id)">告警</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
+        <div class="form-grid mt-4">
+          <v-select
+            v-model="taskForm.voyageId"
+            :items="voyageOptions"
+            item-title="title"
+            item-value="value"
+            label="航次"
+          />
+          <v-text-field v-model="taskForm.planNo" label="方案编号" />
+        </div>
+
+        <v-autocomplete
+          v-model="selectedCargoIds"
+          :items="cargoOptions"
+          item-title="title"
+          item-value="value"
+          label="选择货物"
+          multiple
+          chips
+          closable-chips
+          class="mt-4"
+        />
+
+        <v-divider class="my-4" />
+
+        <div class="section-subtitle">阈值配置</div>
+        <div class="form-grid mt-3">
+          <app-number-field v-model="config.gmMin" label="GM 下限" :min="0" :step="0.1" />
+          <app-number-field v-model="config.adjacentHoldDiffMax" label="相邻舱差异" :min="0" :step="0.1" />
+          <app-number-field v-model="config.ixMax" label="Ix 上限" :min="0" :step="100" />
+          <app-number-field v-model="config.solverTimeLimitSeconds" label="求解时限" :min="1" />
+          <app-number-field v-model="config.defaultIsolationDistance" label="默认隔离距离" :min="0" :step="0.5" />
+        </div>
+
+        <div class="mt-4">
+          <v-btn color="primary" :loading="store.loading" @click="createAndGenerate">生成方案</v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <v-card class="page-card">
+      <v-card-text>
+        <div class="section-title">已有方案</div>
+        <div class="table-shell">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>方案号</th>
+                <th>状态</th>
+                <th>结论</th>
+                <th>GM</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="plan in store.plans" :key="plan.id">
+                <td>{{ plan.planNo }}</td>
+                <td>{{ formatStatus(plan.status) }}</td>
+                <td>
+                  <v-chip
+                    size="small"
+                    :color="plan.complianceStatus === 'PASS' ? 'success' : 'error'"
+                    variant="tonal"
+                  >
+                    {{ formatCompliance(plan.complianceStatus) }}
+                  </v-chip>
+                </td>
+                <td>{{ plan.gm != null ? plan.gm.toFixed(2) : '-' }}</td>
+                <td class="action-cell">
+                  <v-btn size="small" color="primary" variant="text" @click="goResult(plan.id!)">结果</v-btn>
+                  <v-btn size="small" color="warning" variant="text" @click="goVisualization(plan.id!)">可视化</v-btn>
+                  <v-btn size="small" color="error" variant="text" @click="goWarnings(plan.id!)">告警</v-btn>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
 
+import AppNumberField from '@/components/AppNumberField.vue';
 import { defaultSolverConfig, usePlanStore } from '@/store/plan';
+import { useUiStore } from '@/store/ui';
+import { formatCompliance, formatStatus } from '@/utils/formatters';
 
 const router = useRouter();
 const store = usePlanStore();
+const ui = useUiStore();
 const selectedCargoIds = ref<number[]>([11, 12, 13, 14]);
 
 function buildPlanNo() {
@@ -81,6 +118,20 @@ const taskForm = reactive({
   remark: '前端页面生成',
 });
 const config = reactive({ ...defaultSolverConfig });
+
+const voyageOptions = computed(() =>
+  store.voyages.map((voyage) => ({
+    title: voyage.voyageNo,
+    value: voyage.id,
+  })),
+);
+
+const cargoOptions = computed(() =>
+  store.cargos.map((cargo) => ({
+    title: `${cargo.cargoCode} - ${cargo.cargoName}`,
+    value: cargo.id,
+  })),
+);
 
 onMounted(async () => {
   await store.loadBaseData();
@@ -103,11 +154,11 @@ async function createAndGenerate() {
       cargoIds: selectedCargoIds.value,
       config,
     });
-    ElMessage.success('方案已生成');
+    ui.success('方案已生成');
     taskForm.planNo = buildPlanNo();
     router.push(`/plans/${plan.id}/result`);
   } catch (error) {
-    ElMessage.error((error as Error).message);
+    ui.error((error as Error).message);
   }
 }
 
@@ -122,23 +173,20 @@ function goVisualization(id: number) {
 function goWarnings(id: number) {
   router.push(`/plans/${id}/warnings`);
 }
-
-function formatStatus(status?: string) {
-  const statusMap: Record<string, string> = {
-    DRAFT: '草稿',
-    GENERATED: '已生成',
-    PENDING: '待处理',
-    PLANNING: '规划中',
-  };
-  return status ? (statusMap[status] ?? status) : '-';
-}
-
-function formatCompliance(status?: string) {
-  const complianceMap: Record<string, string> = {
-    PASS: '通过',
-    FAIL: '不通过',
-    PENDING: '待判定',
-  };
-  return status ? (complianceMap[status] ?? status) : '-';
-}
 </script>
+
+<style scoped>
+.table-shell {
+  overflow-x: auto;
+}
+
+.action-cell {
+  white-space: nowrap;
+}
+
+.section-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4f6d7a;
+}
+</style>

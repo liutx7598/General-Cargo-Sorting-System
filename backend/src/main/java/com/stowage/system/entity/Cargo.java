@@ -31,6 +31,10 @@ public class Cargo {
 
     @Column(name = "isolation_level")
     private Double isolationLevel;
+
+    @Column(name = "segregation_code")
+    private Integer segregationCode;
+
     private Double weight;
     private Double length;
     private Double width;
