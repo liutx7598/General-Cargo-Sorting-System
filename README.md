@@ -1,31 +1,31 @@
 # 件杂货智能配载系统
 
-一个面向件杂货船 / 杂货船的智能配载 MVP 原型。
+件杂货智能配载系统是一个面向件杂货船 / 杂货船配载场景的工程化原型项目。系统覆盖船舶、货舱、货物、航次、配载方案、告警和规则模板的基础管理，并通过独立算法服务完成分舱、舱内摆位、重心计算、GM 核算、规则校验以及 PASS / FAIL 判定。
 
-系统覆盖船舶、货舱、货物、航次、配载方案、告警和规则模板的基础管理，并通过独立算法服务完成分舱、舱内摆位、重心计算、GM 核算、规则校验和 PASS / FAIL 判定，最终以前端二维总配载图、单舱三维视图、图表和明细表格展示结果。
+项目采用 monorepo 结构，前后端分离，算法服务独立部署，适合作为生产级原型继续演进。
 
 ## 项目亮点
 
-- 前后端分离，算法服务独立部署，便于后续扩展
-- 核心公式真实参与计算，不是 mock 数据
-- 支持船舶、货舱、货物、航次、方案、告警全链路演示
-- 已实现二维总配载图和单舱 Three.js 检视视图
-- 算法已针对件杂货场景优化为“优先少开舱、同层聚拢、先成舱后开下一舱”
-- 提供 Docker 一键运行方式，适合直接交付演示
+- 前后端分离，算法服务独立，便于后续扩展压载、剪力 / 弯矩、LLM 录单等能力
+- 核心公式真实参与计算，不依赖 mock 数据
+- 覆盖船舶、货舱、货物、航次、配载方案、告警的完整链路
+- 已实现二维总配载图和单舱 3D 检视
+- 算法已针对件杂货场景优化为“优先少开舱、优先成舱、优先同层聚拢”
+- 支持 Docker 一键运行，适合演示和交付
 
 ## 系统架构
 
 ```mermaid
 flowchart LR
-    A["Vue 3 前端"] --> B["Spring Boot 业务后端"]
+    A["Vue 3 + Vuetify 3 前端"] --> B["Spring Boot 业务后端"]
     B --> C["FastAPI 算法服务"]
-    B --> D["PostgreSQL / H2"]
+    B --> D["PostgreSQL"]
     B --> E["Redis"]
 ```
 
-配载结果的核心计算链路为：
+系统核心计算链路：
 
-`几何尺寸 -> 单件重心 -> 货舱合重心 -> 整船重心 -> KM 插值 -> GM -> 规则校验 -> 合规性判定`
+`几何尺寸 -> 单件货物重心 -> 货舱合重心 -> 整船重心 -> KM 插值 -> GM -> 规则校验 -> 合规结论`
 
 ## 主要能力
 
@@ -37,8 +37,8 @@ flowchart LR
 - 方案校验与告警输出
 - 整船指标展示：排水量、KG、LCG、TCG、GM、纵向集中指标等
 - 二维总配载图展示
-- 单舱 3D 摆位检查
-- 同款货物快捷复制
+- 单舱 3D 摆位检视
+- 同规格货物快捷复制
 
 ## 技术栈
 
@@ -49,7 +49,7 @@ flowchart LR
 - Vite
 - Pinia
 - Vue Router
-- Element Plus
+- Vuetify 3
 - ECharts
 - Three.js
 
@@ -57,7 +57,7 @@ flowchart LR
 
 - Java 21
 - Spring Boot 3
-- Spring Web / WebFlux
+- Spring Web
 - Spring Data JPA
 - Spring Validation
 - Lombok
@@ -83,18 +83,19 @@ flowchart LR
 
 ```text
 stowage-system
-├─ frontend                  # Vue3 + TS 前端
+├─ frontend                  # Vue 3 + TS + Vuetify 3 前端
 ├─ backend                   # Spring Boot 业务后端
 ├─ algorithm-service         # FastAPI + OR-Tools 算法服务
-├─ docs                      # 架构、公式、接口和开发说明
-├─ docker                    # Docker Compose 与 Nginx 配置
+├─ docs                      # 架构、公式、接口、开发说明
+├─ docker                    # Docker Compose 和 Nginx 配置
 ├─ data                      # 本地运行产生的数据文件
+├─ .tools                    # 本机演示脚本与本地工具
 ├─ start-docker.cmd          # Docker 一键启动
 ├─ stop-docker.cmd           # Docker 一键停止
 └─ README.md
 ```
 
-## 已实现的核心业务对象
+## 核心业务对象
 
 - `Ship`
 - `Hold`
@@ -108,31 +109,47 @@ stowage-system
 
 ## 已实现的核心算法能力
 
-- 货物旋转尺寸计算 `rotate_dimensions()`
-- 单件货物重心计算 `calculate_cargo_centroid()`
-- 越界检查 `check_bounds()`
-- 货物碰撞检查 `check_overlap()`
-- 包围盒距离计算 `calculate_distance_between_boxes()`
-- 货舱合重心计算 `calculate_hold_centroid()`
-- 整船重心计算 `calculate_ship_centroid()`
-- 静水力表 KM 插值 `interpolate_km()`
-- GM 计算 `calculate_gm()`
-- 舱容比与载重比计算 `calculate_hold_utilization()`
-- 纵向集中指标计算 `calculate_longitudinal_index()`
-- 合规性判定 `evaluate_compliance()`
-- 分舱求解 `allocate_holds()`
-- 舱内摆位 `pack_hold_items()`
-- 整体方案生成 `generate_stowage_plan()`
+- `rotate_dimensions()`：货物朝向旋转后的尺寸计算
+- `calculate_cargo_centroid()`：单件货物重心计算
+- `check_bounds()`：货物越界检查
+- `check_overlap()`：货物碰撞检查
+- `calculate_distance_between_boxes()`：包围盒最短距离计算
+- `calculate_hold_centroid()`：货舱合重心计算
+- `calculate_ship_centroid()`：整船重心计算
+- `interpolate_km()`：静水力表 KM 插值
+- `calculate_gm()`：GM 计算
+- `calculate_hold_utilization()`：舱容利用率与单位舱容载重计算
+- `calculate_longitudinal_index()`：纵向集中指标计算
+- `evaluate_compliance()`：合规性判定
+- `allocate_holds()`：分舱求解
+- `pack_hold_items()`：舱内摆位
+- `generate_stowage_plan()`：整体方案生成
+
+## 示例数据
+
+项目内置了一套可直接演示的示例数据，包括：
+
+- 1 条件杂货船
+- 4 个货舱
+- 10+ 件货物
+- 1 个示例航次
+- 规则模板
+- 静水力表数据
+- 示例配载方案
+
+初始化 SQL 位于：
+
+`backend/src/main/resources/db/migration/V1__init_schema_and_data.sql`
 
 ## 快速开始
 
 ### 方式一：Docker 一键运行
 
-适合直接交付给别人演示。
+这是最推荐的启动方式，适合直接拷贝给别人运行。
 
 1. 安装并启动 Docker Desktop
 2. 进入项目根目录
-3. 执行：
+3. 双击运行：
 
 ```bat
 start-docker.cmd
@@ -152,13 +169,13 @@ stop-docker.cmd
 
 说明：
 
-- 首次运行会自动从 `.env.example` 生成 `.env`
+- 首次启动会自动由 `.env.example` 生成 `.env`
 - Docker 模式默认使用 PostgreSQL + Redis
-- 如果端口冲突，可修改 `.env`
+- 如有端口冲突，可修改根目录 `.env`
 
 ### 方式二：本地开发运行
 
-适合本机调试。
+适合本机调试和联调。
 
 #### 1. 启动算法服务
 
@@ -167,10 +184,10 @@ cd algorithm-service
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e .[dev]
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-#### 2. 启动业务后端
+#### 2. 启动后端
 
 ```bash
 cd backend
@@ -185,38 +202,23 @@ npm install
 npm run dev
 ```
 
-当前本地联调默认端口为：
+常用本地访问地址：
 
-- 前端：[http://127.0.0.1:5174](http://127.0.0.1:5174)
-- 后端：[http://127.0.0.1:8081](http://127.0.0.1:8081)
-- 算法服务：[http://127.0.0.1:8000](http://127.0.0.1:8000)
-
-## 示例数据
-
-系统内置一套可直接演示的示例数据，包括：
-
-- 1 条件杂货船
-- 4 个货舱
-- 10+ 件货物
-- 1 个航次
-- 规则模板
-- 静水力表数据
-- 示例配载方案
-
-数据库初始化 SQL 位于：
-
-`backend/src/main/resources/db/migration/V1__init_schema_and_data.sql`
+- 前端开发页：[http://127.0.0.1:5174](http://127.0.0.1:5174)
+- 后端接口：[http://127.0.0.1:8081](http://127.0.0.1:8081)
+- 后端 Swagger：[http://127.0.0.1:8081/swagger-ui.html](http://127.0.0.1:8081/swagger-ui.html)
+- 算法服务 Swagger：[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ## 演示流程
 
 1. 进入“船舶管理”“货物管理”“航次管理”检查基础数据
 2. 进入“配载任务”创建或选择方案
 3. 选择货物并发起“生成方案”
-4. 后端调用算法服务执行分舱、摆位、GM 与规则核算
+4. 后端调用算法服务执行分舱、摆位、重心与 GM 核算
 5. 在“配载结果”页查看 PASS / FAIL、各舱指标与告警
-6. 在“配载可视化”页查看二维总配载图与单舱三维视图
+6. 在“配载可视化”页查看二维总配载图与单舱 3D 检视
 
-## 访问接口
+## 接口概览
 
 ### 后端 REST API
 
@@ -277,13 +279,14 @@ npm run build
 
 ## 当前状态
 
-当前版本已经形成完整 MVP 闭环：
+当前版本已经形成可运行的 MVP 闭环：
 
-- 前端、后端、算法服务已联调打通
+- 前端、后端、算法服务可以联调
 - 核心公式已真实参与计算
 - 示例数据和示例方案可直接演示
 - 可输出 PASS / FAIL 与告警原因
-- 可展示二维总配载图与单舱 3D 视图
+- 已支持二维总配载图与单舱 3D 检视
+- 前端界面已迁移为 Material 风格的 `Vuetify 3`
 
 后续重点扩展方向：
 
@@ -291,4 +294,4 @@ npm run build
 - 压载联动
 - 剪力 / 弯矩计算
 - 配载图导出 PNG / PDF
-- 更完整的后端集成测试与任务编排
+- 更完整的后端集成测试与异步任务编排
