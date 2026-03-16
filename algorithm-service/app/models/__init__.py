@@ -1,0 +1,2 @@
+"""Internal domain objects."""
+

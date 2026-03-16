@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:stowage;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+app:
+  algorithm:
+    base-url: http://localhost:8000
+

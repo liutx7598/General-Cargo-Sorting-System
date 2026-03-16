@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/stowage-demo;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:demo-data.sql
+  h2:
+    console:
+      enabled: true
+  cache:
+    type: simple
+
+app:
+  algorithm:
+    base-url: http://localhost:8000

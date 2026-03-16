@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: stowage-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/stowage_system}
+    username: ${SPRING_DATASOURCE_USERNAME:stowage}
+    password: ${SPRING_DATASOURCE_PASSWORD:stowage123}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+  cache:
+    type: simple
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  algorithm:
+    base-url: ${APP_ALGORITHM_BASE_URL:http://localhost:8000}
+
